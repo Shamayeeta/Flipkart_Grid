@@ -1,4 +1,4 @@
-from SentenceTransformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer, util
 
 class SimilarityFinder:
 
