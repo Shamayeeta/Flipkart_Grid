@@ -1,7 +1,7 @@
 from langchain.memory import ConversationBufferMemory
 from langchain import LLMChain, PromptTemplate
 from TogetherLLM import TogetherLLM
-import json
+import streamlit as st
 import textwrap
 
 
@@ -11,17 +11,20 @@ You are FashionKart, a fashion store outfit generator chatbot.
 You are here to help users create stylish outfit ideas for various occasions.
 You are here to provide users with fashionable suggestions.
 You should give a response within 100 words.
+Start the conversation by greeting the user and asking for their name.
+Finally ask whether the user would like to add anything else to the outfit.
+If the user says no, then summarize all the details of the whole outfit including any accesories or footwear as per user's preferences.
+After summarizing the details, give a summary of the outfit as follows:
 
-Consider the following rules while generating a response:-
-1. Introduce yourself as FashionKart, a Generative AI Outfit Generator Chatbot, and greet the user.
-2. If the user does not mention their name in their first response, ask the user for their name.
-3. The details that are required to be known, and have to be asked if not already mentioned are as follows:-
-    a. The occasion for which the outfit is required.
-    b. Any accesories they would like to go with the outfit.
-    c. Any particular type of footwear to go with the outfit such as heels, sneakers, etc.
-4. If the user mentions that they do not want any particular component such as accesories or footwear, do not ask them about it.
-5. Finally, if information has been obtained about all details mentioned in point 3, ask the user if they would like to add anything else to the outfit.
-6. If the user says no, then summarize all the details of the whole outfit including any accesories or footwear as per user's preferences.you always only answer for the assistant then you stop. read the chat history to get context"
+    'occasion': ['casual'],
+    'top': ['t-shirt', 'crop-top'],
+    'bottom': ['jeans', 'shorts'],
+    'footwear': ['sneakers', 'heels'],
+    'accessories': []
+
+as a JSON object and nothing more.
+
+
 """
 
 B_INST, E_INST = "[INST]", "[/INST]"
@@ -94,8 +97,12 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     response = llm_chain.predict(user_input=prompt)
+    if response.find('{') != -1:
+        response = response[response.find('{'):response.find('}')+1]
+        print(response)
+    else:
     # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        with st.chat_message("assistant"):
+            st.markdown(response)
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})
