@@ -4,6 +4,29 @@ from TogetherLLM import TogetherLLM
 import streamlit as st
 import textwrap
 
+sample_results = [{'name': 'U-Neck Women Blouse',
+   'link': 'https://www.flipkart.com/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28',
+   'current_price': 296,
+   'original_price': 1299,
+   'discounted': True,
+   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/l1mh7rk0/blouse/n/y/f/34-bw-sc-bl-5004-dobby-elbow-black-scube-designs-original-imagd5h7c6djaftb.jpeg?q=70',
+   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28'},
+  {'name': 'Boat Neck Women Blouse',
+   'link': 'https://www.flipkart.com/s-grant-boat-neck-women-blouse/p/itm64fea2a5355f4',
+   'current_price': 499,
+   'original_price': 1299,
+   'discounted': True,
+   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/xif0q/blouse/l/m/a/free-begampuri-white-s-grant-original-imagpckzhzksjud2.jpeg?q=70',
+   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/s-grant-boat-neck-women-blouse/p/itm64fea2a5355f4'},
+  {'name': 'Sweetheart Neck Women Blouse',
+   'link': 'https://www.flipkart.com/s-grant-sweetheart-neck-women-blouse/p/itm26dfab43f188c',
+   'current_price': 449,
+   'original_price': 1299,
+   'discounted': True,
+   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/xif0q/blouse/k/y/7/free-chikankari-01-s-grant-original-imagzuzecdrubywz.jpeg?q=70',
+   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/s-grant-sweetheart-neck-women-blouse/p/itm26dfab43f188c'},
+]
+
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
 system_prompt = """
@@ -15,13 +38,13 @@ Start the conversation by greeting the user and asking for their name.
 Finally ask whether the user would like to add anything else to the outfit.
 If the user says no, then summarize all the details of the whole outfit including any accesories or footwear as per user's preferences.
 After summarizing the details, give a summary of the outfit as follows:
-
+{{
     'occasion': ['casual'],
     'top': ['t-shirt', 'crop-top'],
     'bottom': ['jeans', 'shorts'],
     'footwear': ['sneakers', 'heels'],
     'accessories': []
-
+}}
 as a JSON object and nothing more.
 
 
@@ -100,9 +123,32 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     if response.find('{') != -1:
         response = response[response.find('{'):response.find('}')+1]
         print(response)
+        for result in sample_results:
+            with st.container():
+                st.markdown(f"**{result['name']}**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.image(result['thumbnail'], use_column_width=True)
+                with col2:
+                    st.markdown(f"**Current Price:** {result['current_price']}")
+                    st.markdown(f"**Original Price:** {result['original_price']}")
+                    st.markdown(f"**Discounted:** {result['discounted']}")
+                    st.markdown(f"**Buy Now:** {result['link']}")
+
     else:
     # Display assistant response in chat message container
         with st.chat_message("assistant"):
             st.markdown(response)
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
+
+with st.sidebar:
+    st.subheader("About")
+    st.markdown(
+        """
+        This app is a demo for the FashionKart Outfit Generator ChatBot.
+        The chatbot is powered by the LLaMA2-70B language model.
+
+        """
+    )
+    st.button("Clear Chat History", on_click=lambda: st.session_state.clear())
