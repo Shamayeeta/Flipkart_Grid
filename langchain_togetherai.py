@@ -3,6 +3,8 @@ from langchain import LLMChain, PromptTemplate
 from TogetherLLM import TogetherLLM
 import streamlit as st
 import textwrap
+from query_results import search_results
+import requests
 
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
@@ -12,18 +14,19 @@ You are here to help users create stylish outfit ideas for various occasions.
 You are here to provide users with fashionable suggestions.
 You should give a response within 100 words.
 Start the conversation by greeting the user and asking for their name.
-Finally ask whether the user would like to add anything else to the outfit.
-If the user says no, then summarize all the details of the whole outfit including any accesories or footwear as per user's preferences.
-After summarizing the details, give a summary of the outfit as follows:
-
-    'occasion': ['casual'],
+Then ask the user for the outfit details, such as occasion, style, etc.
+Give the user a suggestion, and do not add any summary in this response itself.
+If the user says that they like the suggestion, then ask whether the user would like to add anything else to the outfit.
+If the user mentions something they would like to add, add it to the list, and ask them again if they would like to add anything else.
+If the user says no, then give a concise summary of the whole outfit including any accesories or footwear as a JSON object or dictionary in the format shown below.
+{{
+  'occasion': ['birthday', 'party'],
     'top': ['t-shirt', 'crop-top'],
     'bottom': ['jeans', 'shorts'],
-    'footwear': ['sneakers', 'heels'],
-    'accessories': []
-
-as a JSON object and nothing more.
-
+    'footwear': ['sneakers'],
+    'coverall': ['jackets'],
+    'onepiece': ['dress'],
+    'accessories': [] }}   
 
 """
 
@@ -97,12 +100,48 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     response = llm_chain.predict(user_input=prompt)
-    if response.find('{') != -1:
-        response = response[response.find('{'):response.find('}')+1]
-        print(response)
-    else:
-    # Display assistant response in chat message container
+    # print(response)
+    if response.find('{') == -1:
+        # Display assistant response in chat message container
         with st.chat_message("assistant"):
             st.markdown(response)
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
+    else:
+        categories = response[response.find('{'):response.find('}')+1]
+        name = str(llm_chain.predict(user_input="What is my name? Give the response in one word only"))
+        categories = eval(categories)
+        search_results = search_results(categories, name)
+        for category in search_results:
+            for listing in search_results[category]:
+                top_product = listing[0]
+                string = '/'.join(top_product[2].split('/')[3:])
+                query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
+                result = requests.get(query_url).json()
+                with st.container():
+                    st.markdown(f"**{result['name']}**")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.image(result['thumbnails'][0], use_column_width=True)
+                    with col2:
+                        st.markdown(f"**Current Price:** {result['current_price']}")
+                        st.markdown(f"**Original Price:** {result['original_price']}")
+                        st.markdown(f"**Discounted:** {result['discounted']}")
+                        st.markdown(f"**Buy Now:** {result['share_url']}")
+
+with st.sidebar:
+    st.subheader("About")
+    st.markdown(
+        """
+        This app is a demo for the FashionKart Outfit Generator ChatBot.
+        The chatbot is powered by the LLaMA2-70B language model.
+
+        """
+    )
+    st.button("Clear Chat History", on_click=lambda: st.session_state.clear())
+
+
+        
+
+
+    
