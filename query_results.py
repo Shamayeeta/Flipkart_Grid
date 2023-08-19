@@ -88,7 +88,10 @@ def search_results(results, name):
 
 def similarity_ranker(search_products, products_user, totalproducts_user):
     if len(products_user["productsViewedUser"]) + len(products_user["productsBoughtUser"]) + len(products_user["productsWishlistUser"]) == 0:
-        return search_products
+        ans = []
+        for i in search_products:
+            ans.append((0,i["name"], i["link"]))
+        return ans
     check = SimilarityFinder('sentence-transformers/all-mpnet-base-v2')
     heap = []
     heapify(heap)

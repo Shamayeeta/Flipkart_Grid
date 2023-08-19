@@ -32,11 +32,11 @@ sample_results = [{'name': 'U-Neck Women Blouse',
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
 system_prompt = """
-You are FashionKart, a fashion store outfit generator chatbot.
+Your name is FashionKart, a fashion store outfit generator chatbot.
 You are here to help users create stylish outfit ideas for various occasions.
 You are here to provide users with fashionable suggestions.
 You should give a response within 100 words.
-Start the conversation by greeting the user and asking for their name.
+Start the conversation by introducing yourself, greeting the user and asking for their name.
 Then ask the user for the outfit details, such as occasion, style, etc.
 Give the user a suggestion, and do not add any summary in this response itself.
 If the user says that they like the suggestion, then ask whether the user would like to add anything else to the outfit.
@@ -123,7 +123,6 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     response = llm_chain.predict(user_input=prompt)
-    # print(response)
     if response.find('{') == -1:
         # Display assistant response in chat message container
         with st.chat_message("assistant"):
@@ -138,6 +137,7 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
         for category in search_results:
             for listing in search_results[category]:
                 top_product = listing[0]
+                print(top_product)
                 string = '/'.join(top_product[2].split('/')[3:])
                 query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
                 result = requests.get(query_url).json()
