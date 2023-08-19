@@ -6,6 +6,29 @@ import textwrap
 from query_results import search_results
 import requests
 
+sample_results = [{'name': 'U-Neck Women Blouse',
+   'link': 'https://www.flipkart.com/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28',
+   'current_price': 296,
+   'original_price': 1299,
+   'discounted': True,
+   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/l1mh7rk0/blouse/n/y/f/34-bw-sc-bl-5004-dobby-elbow-black-scube-designs-original-imagd5h7c6djaftb.jpeg?q=70',
+   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28'},
+  {'name': 'Boat Neck Women Blouse',
+   'link': 'https://www.flipkart.com/s-grant-boat-neck-women-blouse/p/itm64fea2a5355f4',
+   'current_price': 499,
+   'original_price': 1299,
+   'discounted': True,
+   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/xif0q/blouse/l/m/a/free-begampuri-white-s-grant-original-imagpckzhzksjud2.jpeg?q=70',
+   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/s-grant-boat-neck-women-blouse/p/itm64fea2a5355f4'},
+  {'name': 'Sweetheart Neck Women Blouse',
+   'link': 'https://www.flipkart.com/s-grant-sweetheart-neck-women-blouse/p/itm26dfab43f188c',
+   'current_price': 449,
+   'original_price': 1299,
+   'discounted': True,
+   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/xif0q/blouse/k/y/7/free-chikankari-01-s-grant-original-imagzuzecdrubywz.jpeg?q=70',
+   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/s-grant-sweetheart-neck-women-blouse/p/itm26dfab43f188c'},
+]
+
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
 system_prompt = """
