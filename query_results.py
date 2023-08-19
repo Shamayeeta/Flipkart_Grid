@@ -38,9 +38,9 @@ def search_results(results, name, gender):
     totalproducts_user = 0
     if not user.empty:
         if user.iloc[0]["Gender"] == "F":
-            gender = "women"
+            gender[0] = "women"
         elif user.iloc[0]["Gender"] == "M":
-            gender = "men"
+            gender[0] = "men"
         totalproducts_user = len(user.iloc[0]["ProductsBought"]) + len(user.iloc[0]["ProductsViewedInLast30Days"]) + len(user.iloc[0]["ProductsInWishlist"])
 
         if totalproducts_user > 15  :
@@ -62,11 +62,12 @@ def search_results(results, name, gender):
             products_user["productsWishlistUser"] = user.iloc[0]["ProductsInWishlist"]
 
     pprint(products_user)
+
     for i in queries:
-        for j in queries[i]:
-            j += occasions + " " + gender
-            print(j)
-            print(gender)
+        for j in range(len(queries[i])):
+            queries[i][j] = queries[i][j] + " " + occasions + " " + gender[0]
+
+    pprint(queries)
 
     search_results = {}
     for i in queries:

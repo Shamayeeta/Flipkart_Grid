@@ -30,6 +30,7 @@ If the user says no, then give a concise summary of the whole outfit including a
     'onepiece': ['dress', 'gown'],
     'accessories': [] }}   
 In the final JSON object or dictionary, two categories cannot have the same item. Also if onepiece is present, then top and bottom must be empty. Similarly, if top and bottom are present, then onepiece must be empty.
+You cannot have any key outside of the ones given in the example above. You have to fit in every item as a value in one of the keys given above.
 If the user says that they do not like a particular product, then return another suggestion as a JSON object described above., do not add anything the user does not ask or agree to explicitly. Change only the product that the user mentions they don't like.
 """
 
@@ -113,24 +114,22 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
         st.session_state.messages.append({"role": "assistant", "content": response})
     else:
         categories = response[response.find('{'):response.find('}')+1]
-        name = str(llm_chain.predict(user_input="What is my name? Give the response in one word only"))
-        gender = str(llm_chain.predict(user_input="What do you think my gender is? The response has to be one word - either 'women' or 'men'"))
-        if (gender.find('women')!=-1) or gender.find('woman')!= -1 or gender.find('female') != -1: 
-            gender = "women"
-        elif(gender.find('men')!=-1) or gender.find('man') != -1 or gender.find('male') != -1:
-            gender = "men" 
+        gender = []
+        name = str(llm_chain.predict(user_input="What is my name? Return only my name in one word and nothing else"))
+        gender.append(str(llm_chain.predict(user_input="What do you think my gender is? The response has to be one word - either 'women' or 'men'")))
+        if (gender[0].find('women')!=-1) or gender[0].find('woman')!= -1 or gender[0].find('female') != -1: 
+            gender[0] = "women"
+        elif(gender[0].find('men')!=-1) or gender[0].find('man') != -1 or gender[0].find('male') != -1:
+            gender[0] = "men" 
     
         categories = eval(categories)
         search_results = search_results(categories, name[1:], gender)
 
-        # pprint(search_results)
-        # for category in search_results:
-        #     print(category, len(search_results[category]))
         for category in search_results:
             flag = 0
             if len(search_results[category]) == 0:
                 continue
-            while not flag and index[category] + 1 < len(search_results[category]):
+            while flag == 0 and index[category] + 1 < len(search_results[category]):
                 index[category] += 1
                 top_product = search_results[category][index[category]]
                 # print(top_product)
@@ -138,15 +137,15 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
                 # print(query_url)
                 result = requests.get(query_url).json()
-                # print(result)
-                print(gender)
                 if 'name' in result:
                     print(gender, result['name'])
-                    if gender == "women" and result['name'].find("women") != -1:
+                    if gender[0] == "women" and result['name'].find("Women") != -1:
                             flag = 1
-                    elif gender == "men" and result['name'].find("women") == -1:
-                            print(result['name'])
+                    elif gender[0] == "men" and result['name'].find("Women") == -1:
+                            print("take", result['name'], result['name'].find("Women"))
                             flag = 1
+                else:
+                    continue
 
             print(category, result)
             with st.container():
