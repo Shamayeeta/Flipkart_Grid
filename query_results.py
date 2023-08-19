@@ -22,26 +22,25 @@ def search_results(results, name, gender):
     occasions = ""
     if "occasion" in results:
         for item in results["occasion"]:
-            occasions += "+" + item
+            occasions += " " + item
 
     seasons = ""
     if "seasons" in results:
         for item in results["seasons"]:
-            seasons += "+" + item
+            seasons += " " + item
     
     users = pd.read_pickle('users.pkl')
-    name = name[1:]
     user = users.loc[users['FirstName'] == name]
-    gender = ""
+    # gender = ""
     products_user = { "productsBoughtUser" : [] 
                     , "productsViewedUser" : []
                     , "productsWishlistUser" : []}
     totalproducts_user = 0
     if not user.empty:
         if user.iloc[0]["Gender"] == "F":
-            gender = "Female"
+            gender = "women"
         elif user.iloc[0]["Gender"] == "M":
-            gender = "Male"
+            gender = "men"
         totalproducts_user = len(user.iloc[0]["ProductsBought"]) + len(user.iloc[0]["ProductsViewedInLast30Days"]) + len(user.iloc[0]["ProductsInWishlist"])
 
         if totalproducts_user > 15  :
@@ -65,8 +64,9 @@ def search_results(results, name, gender):
     pprint(products_user)
     for i in queries:
         for j in queries[i]:
-            j += occasions + "+" + gender
-
+            j += occasions + " " + gender
+            print(j)
+            print(gender)
 
     search_results = {}
     for i in queries:

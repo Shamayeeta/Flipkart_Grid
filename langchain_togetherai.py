@@ -8,30 +8,6 @@ from pprint import pprint
 import requests
 from ExtractImage import Extract_Image
 
-sample_results = [{'name': 'U-Neck Women Blouse',
-   'link': 'https://www.flipkart.com/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28',
-   'current_price': 296,
-   'original_price': 1299,
-   'discounted': True,
-   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/l1mh7rk0/blouse/n/y/f/34-bw-sc-bl-5004-dobby-elbow-black-scube-designs-original-imagd5h7c6djaftb.jpeg?q=70',
-   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28'},
-  {'name': 'Boat Neck Women Blouse',
-   'link': 'https://www.flipkart.com/s-grant-boat-neck-women-blouse/p/itm64fea2a5355f4',
-   'current_price': 499,
-   'original_price': 1299,
-   'discounted': True,
-   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/xif0q/blouse/l/m/a/free-begampuri-white-s-grant-original-imagpckzhzksjud2.jpeg?q=70',
-   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/s-grant-boat-neck-women-blouse/p/itm64fea2a5355f4'},
-  {'name': 'Sweetheart Neck Women Blouse',
-   'link': 'https://www.flipkart.com/s-grant-sweetheart-neck-women-blouse/p/itm26dfab43f188c',
-   'current_price': 449,
-   'original_price': 1299,
-   'discounted': True,
-   'thumbnail': 'https://rukminim2.flixcart.com/image/612/612/xif0q/blouse/k/y/7/free-chikankari-01-s-grant-original-imagzuzecdrubywz.jpeg?q=70',
-   'query_url': 'https://flipkart-scraper-api.dvishal485.workers.dev/product/s-grant-sweetheart-neck-women-blouse/p/itm26dfab43f188c'},
-]
-
-
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
 system_prompt = """
 Your name is FashionKart, a fashion store outfit generator chatbot.
@@ -51,9 +27,10 @@ If the user says no, then give a concise summary of the whole outfit including a
     'bottom': ['jeans', 'shorts'],
     'footwear': ['sneakers'],
     'coverall': ['jackets'],
-    'onepiece': ['dress'],
+    'onepiece': ['dress', 'gown'],
     'accessories': [] }}   
 In the final JSON object or dictionary, two categories cannot have the same item. Also if onepiece is present, then top and bottom must be empty. Similarly, if top and bottom are present, then onepiece must be empty.
+If the user says that they do not like a particular product, then return another suggestion as a JSON object described above., do not add anything the user does not ask or agree to explicitly. Change only the product that the user mentions they don't like.
 """
 
 B_INST, E_INST = "[INST]", "[/INST]"
@@ -127,7 +104,6 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     index = {"top": -1,"bottom": -1,"coverall": -1,"onepiece": -1, "accessories": -1, "footwear": -1}
-
     response = llm_chain.predict(user_input=prompt)
     if response.find('{') == -1:
         # Display assistant response in chat message container
@@ -138,10 +114,14 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     else:
         categories = response[response.find('{'):response.find('}')+1]
         name = str(llm_chain.predict(user_input="What is my name? Give the response in one word only"))
-        gender = str(llm_chain.predict(user_input="What do you think my gender is? Give the response in one word only"))
-        pprint(gender)
+        gender = str(llm_chain.predict(user_input="What do you think my gender is? The response has to be one word - either 'women' or 'men'"))
+        if (gender.find('women')!=-1) or gender.find('woman')!= -1 or gender.find('female') != -1: 
+            gender = "women"
+        elif(gender.find('men')!=-1) or gender.find('man') != -1 or gender.find('male') != -1:
+            gender = "men" 
+        print(gender)
         categories = eval(categories)
-        search_results = search_results(categories, name, gender)
+        search_results = search_results(categories, name[1:], gender)
         # pprint(search_results)
         # for category in search_results:
         #     print(category, len(search_results[category]))
