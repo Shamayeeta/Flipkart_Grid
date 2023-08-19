@@ -119,9 +119,10 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
             gender = "women"
         elif(gender.find('men')!=-1) or gender.find('man') != -1 or gender.find('male') != -1:
             gender = "men" 
-        print(gender)
+    
         categories = eval(categories)
         search_results = search_results(categories, name[1:], gender)
+
         # pprint(search_results)
         # for category in search_results:
         #     print(category, len(search_results[category]))
@@ -129,7 +130,7 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
             flag = 0
             if len(search_results[category]) == 0:
                 continue
-            while not flag and index[category] < len(search_results[category]):
+            while not flag and index[category] + 1 < len(search_results[category]):
                 index[category] += 1
                 top_product = search_results[category][index[category]]
                 # print(top_product)
@@ -138,8 +139,15 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 # print(query_url)
                 result = requests.get(query_url).json()
                 # print(result)
+                print(gender)
                 if 'name' in result:
-                    flag = 1
+                    print(gender, result['name'])
+                    if gender == "women" and result['name'].find("women") != -1:
+                            flag = 1
+                    elif gender == "men" and result['name'].find("women") == -1:
+                            print(result['name'])
+                            flag = 1
+
             print(category, result)
             with st.container():
                 st.markdown(f"**{result['name']}**")
