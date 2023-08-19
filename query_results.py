@@ -40,6 +40,7 @@ def search_results(results, name):
     products_user = { "productsBoughtUser" : [] 
                     , "productsViewedUser" : []
                     , "productsWishlistUser" : []}
+    totalproducts_user = 0
     if not user.empty:
         if user.iloc[0]["Gender"] == "F":
             gender = "Female"
