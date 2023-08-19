@@ -4,6 +4,7 @@ from TogetherLLM import TogetherLLM
 import streamlit as st
 import textwrap
 from query_results import search_results
+from pprint import pprint
 import requests
 
 sample_results = [{'name': 'U-Neck Women Blouse',
@@ -122,6 +123,8 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    index = {"top": -1,"bottom": -1,"coverall": -1,"onepiece": -1, "accessories": -1, "footwear": -1}
+
     response = llm_chain.predict(user_input=prompt)
     if response.find('{') == -1:
         # Display assistant response in chat message container
@@ -134,23 +137,38 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
         name = str(llm_chain.predict(user_input="What is my name? Give the response in one word only"))
         categories = eval(categories)
         search_results = search_results(categories, name)
+        # pprint(search_results)
+        # for category in search_results:
+        #     print(category, len(search_results[category]))
         for category in search_results:
-            for listing in search_results[category]:
-                top_product = listing[0]
-                print(top_product)
+            flag = 0
+            if len(search_results[category]) == 0:
+                continue
+            while not flag and index[category] < len(search_results[category]):
+                index[category] += 1
+                top_product = search_results[category][index[category]]
+                # print(top_product)
                 string = '/'.join(top_product[2].split('/')[3:])
                 query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
+                # print(query_url)
                 result = requests.get(query_url).json()
-                with st.container():
-                    st.markdown(f"**{result['name']}**")
-                    col1, col2 = st.columns(2)
-                    with col1:
+                # print(result)
+                if 'name' in result:
+                    flag = 1
+            print(category, result)
+            with st.container():
+                st.markdown(f"**{result['name']}**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if len(result['thumbnails']):
                         st.image(result['thumbnails'][0], use_column_width=True)
-                    with col2:
-                        st.markdown(f"**Current Price:** {result['current_price']}")
-                        st.markdown(f"**Original Price:** {result['original_price']}")
-                        st.markdown(f"**Discounted:** {result['discounted']}")
-                        st.markdown(f"**Buy Now:** {result['share_url']}")
+                    else:
+                        st.image('imagenotfound.png', use_column_width=True)
+                with col2:
+                    st.markdown(f"**Current Price:** {result['current_price']}")
+                    st.markdown(f"**Original Price:** {result['original_price']}")
+                    st.markdown(f"**Discounted:** {result['discounted']}")
+                    st.markdown(f"**Buy Now:** {result['share_url']}")
 
 with st.sidebar:
     st.subheader("About")

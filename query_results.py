@@ -32,6 +32,8 @@ def search_results(results, name):
     for i in queries:
         for j in queries[i]:
             j += occasions
+    
+    print(queries)
 
     users = pd.read_pickle('users.pkl')
     name = name[1:]
@@ -74,27 +76,25 @@ def search_results(results, name):
 
     search_results = {}
     for i in queries:
+        ranked_products = []
+        heapify(ranked_products)
         for j in queries[i]:
             response = requests.get(f"https://flipkart-scraper-api.dvishal485.workers.dev/search/{j}").json()
             total_search_results = response["total_result"]
             search_products = response["result"]
-            ranked_products = similarity_ranker(search_products, products_user, totalproducts_user)
-            if i not in search_results:
-                search_results[i] = [ranked_products]
-            else:
-                search_results[i].append(ranked_products)
+            ranked_products = similarity_ranker(search_products, products_user, totalproducts_user, ranked_products)
+        search_results[i] = ranked_products
+    
     return search_results
 
 
-def similarity_ranker(search_products, products_user, totalproducts_user):
+def similarity_ranker(search_products, products_user, totalproducts_user, ranked_products):
     if len(products_user["productsViewedUser"]) + len(products_user["productsBoughtUser"]) + len(products_user["productsWishlistUser"]) == 0:
         ans = []
         for i in search_products:
             ans.append((0,i["name"], i["link"]))
         return ans
     check = SimilarityFinder('sentence-transformers/all-mpnet-base-v2')
-    heap = []
-    heapify(heap)
     weights = { "productsViewedUser" : 0.5, "productsBoughtUser" : 0.3, "productsWishlistUser": 0.2}
     if len(search_products) > 10:
         search_products = search_products[2:12]
@@ -106,10 +106,10 @@ def similarity_ranker(search_products, products_user, totalproducts_user):
                 check.calculate_embeddings(str(j[1])),
                 check.calculate_embeddings(i["name"])).item()
         sim = val/min(20, totalproducts_user)
-        heappush(heap, (-sim , i["name"], i["link"]))
+        heappush(ranked_products, (-sim , i["name"], i["link"]))
 
         sorted_tuples = []
-        max_heap = heap
+        max_heap = ranked_products
         while max_heap:
             max_value_neg, value, link = heappop(max_heap)
             sorted_tuples.append((abs(max_value_neg), value, link))
