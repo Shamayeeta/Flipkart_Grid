@@ -1,9 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 
-class ExtractImage():
+class Extract_Image():
 
-    def __init__(self, url):
+    def __init__(self, url = ""):
+        self.url = url
+
+    def set_url(self, url):
         self.url = url
 
     def get_image(self):

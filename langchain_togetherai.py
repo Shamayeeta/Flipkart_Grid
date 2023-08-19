@@ -6,6 +6,7 @@ import textwrap
 from query_results import search_results
 from pprint import pprint
 import requests
+from ExtractImage import Extract_Image
 
 sample_results = [{'name': 'U-Neck Women Blouse',
    'link': 'https://www.flipkart.com/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28',
@@ -42,6 +43,7 @@ Then ask the user for the outfit details, such as occasion, style, etc.
 Give the user a suggestion, and do not add any summary in this response itself.
 If the user says that they like the suggestion, then ask whether the user would like to add anything else to the outfit.
 If the user mentions something they would like to add, add it to the list, and ask them again if they would like to add anything else.
+You must ensure that in the final outfit, either you can suggest both top and bottom, or you can suggest a onepiece.
 If the user says no, then give a concise summary of the whole outfit including any accesories or footwear as a JSON object or dictionary in the format shown below.
 {{
   'occasion': ['birthday', 'party'],
@@ -51,7 +53,7 @@ If the user says no, then give a concise summary of the whole outfit including a
     'coverall': ['jackets'],
     'onepiece': ['dress'],
     'accessories': [] }}   
-
+In the final JSON object or dictionary, two categptwo categories cannot have the same item.
 """
 
 B_INST, E_INST = "[INST]", "[/INST]"
@@ -61,6 +63,7 @@ B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
 # If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
 
+image = Extract_Image()
 
 def get_prompt(instruction, new_system_prompt = system_prompt ):
     SYSTEM_PROMPT = B_SYS + new_system_prompt + E_SYS
@@ -160,8 +163,10 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 st.markdown(f"**{result['name']}**")
                 col1, col2 = st.columns(2)
                 with col1:
-                    if len(result['thumbnails']):
-                        st.image(result['thumbnails'][0], use_column_width=True)
+                    image.set_url(top_product[2])
+                    img = image.get_image()
+                    if len(img):
+                        st.image(img[0], use_column_width=True)
                     else:
                         st.image('imagenotfound.png', use_column_width=True)
                 with col2:
