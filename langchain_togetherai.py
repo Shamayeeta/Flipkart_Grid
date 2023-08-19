@@ -3,6 +3,9 @@ from langchain import LLMChain, PromptTemplate
 from TogetherLLM import TogetherLLM
 import streamlit as st
 import textwrap
+from query_results import search_results
+from pprint import pprint
+import requests
 
 sample_results = [{'name': 'U-Neck Women Blouse',
    'link': 'https://www.flipkart.com/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28',
@@ -30,23 +33,24 @@ sample_results = [{'name': 'U-Neck Women Blouse',
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
 system_prompt = """
-You are FashionKart, a fashion store outfit generator chatbot.
+Your name is FashionKart, a fashion store outfit generator chatbot.
 You are here to help users create stylish outfit ideas for various occasions.
 You are here to provide users with fashionable suggestions.
 You should give a response within 100 words.
-Start the conversation by greeting the user and asking for their name.
-Finally ask whether the user would like to add anything else to the outfit.
-If the user says no, then summarize all the details of the whole outfit including any accesories or footwear as per user's preferences.
-After summarizing the details, give a summary of the outfit as follows:
+Start the conversation by introducing yourself, greeting the user and asking for their name.
+Then ask the user for the outfit details, such as occasion, style, etc.
+Give the user a suggestion, and do not add any summary in this response itself.
+If the user says that they like the suggestion, then ask whether the user would like to add anything else to the outfit.
+If the user mentions something they would like to add, add it to the list, and ask them again if they would like to add anything else.
+If the user says no, then give a concise summary of the whole outfit including any accesories or footwear as a JSON object or dictionary in the format shown below.
 {{
-    'occasion': ['casual'],
+  'occasion': ['birthday', 'party'],
     'top': ['t-shirt', 'crop-top'],
     'bottom': ['jeans', 'shorts'],
-    'footwear': ['sneakers', 'heels'],
-    'accessories': []
-}}
-as a JSON object and nothing more.
-
+    'footwear': ['sneakers'],
+    'coverall': ['jackets'],
+    'onepiece': ['dress'],
+    'accessories': [] }}   
 
 """
 
@@ -119,28 +123,52 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    response = llm_chain.predict(user_input=prompt)
-    if response.find('{') != -1:
-        response = response[response.find('{'):response.find('}')+1]
-        print(response)
-        for result in sample_results:
-            with st.container():
-                st.markdown(f"**{result['name']}**")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.image(result['thumbnail'], use_column_width=True)
-                with col2:
-                    st.markdown(f"**Current Price:** {result['current_price']}")
-                    st.markdown(f"**Original Price:** {result['original_price']}")
-                    st.markdown(f"**Discounted:** {result['discounted']}")
-                    st.markdown(f"**Buy Now:** {result['link']}")
+    index = {"top": -1,"bottom": -1,"coverall": -1,"onepiece": -1, "accessories": -1, "footwear": -1}
 
-    else:
-    # Display assistant response in chat message container
+    response = llm_chain.predict(user_input=prompt)
+    if response.find('{') == -1:
+        # Display assistant response in chat message container
         with st.chat_message("assistant"):
             st.markdown(response)
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
+    else:
+        categories = response[response.find('{'):response.find('}')+1]
+        name = str(llm_chain.predict(user_input="What is my name? Give the response in one word only"))
+        categories = eval(categories)
+        search_results = search_results(categories, name)
+        # pprint(search_results)
+        # for category in search_results:
+        #     print(category, len(search_results[category]))
+        for category in search_results:
+            flag = 0
+            if len(search_results[category]) == 0:
+                continue
+            while not flag and index[category] < len(search_results[category]):
+                index[category] += 1
+                top_product = search_results[category][index[category]]
+                # print(top_product)
+                string = '/'.join(top_product[2].split('/')[3:])
+                query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
+                # print(query_url)
+                result = requests.get(query_url).json()
+                # print(result)
+                if 'name' in result:
+                    flag = 1
+            print(category, result)
+            with st.container():
+                st.markdown(f"**{result['name']}**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if len(result['thumbnails']):
+                        st.image(result['thumbnails'][0], use_column_width=True)
+                    else:
+                        st.image('imagenotfound.png', use_column_width=True)
+                with col2:
+                    st.markdown(f"**Current Price:** {result['current_price']}")
+                    st.markdown(f"**Original Price:** {result['original_price']}")
+                    st.markdown(f"**Discounted:** {result['discounted']}")
+                    st.markdown(f"**Buy Now:** {result['share_url']}")
 
 with st.sidebar:
     st.subheader("About")
@@ -152,3 +180,9 @@ with st.sidebar:
         """
     )
     st.button("Clear Chat History", on_click=lambda: st.session_state.clear())
+
+
+        
+
+
+    
