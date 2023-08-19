@@ -53,7 +53,7 @@ If the user says no, then give a concise summary of the whole outfit including a
     'coverall': ['jackets'],
     'onepiece': ['dress'],
     'accessories': [] }}   
-In the final JSON object or dictionary, two categptwo categories cannot have the same item.
+In the final JSON object or dictionary, two categories cannot have the same item. Also if onepiece is present, then top and bottom must be empty. Similarly, if top and bottom are present, then onepiece must be empty.
 """
 
 B_INST, E_INST = "[INST]", "[/INST]"
@@ -138,8 +138,10 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     else:
         categories = response[response.find('{'):response.find('}')+1]
         name = str(llm_chain.predict(user_input="What is my name? Give the response in one word only"))
+        gender = str(llm_chain.predict(user_input="What do you think my gender is? Give the response in one word only"))
+        pprint(gender)
         categories = eval(categories)
-        search_results = search_results(categories, name)
+        search_results = search_results(categories, name, gender)
         # pprint(search_results)
         # for category in search_results:
         #     print(category, len(search_results[category]))

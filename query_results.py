@@ -10,7 +10,7 @@ from SimilarityFinder import SimilarityFinder
 from heapq import heappop, heappush, heapify
 import random
 
-def search_results(results, name):
+def search_results(results, name, gender):
     queries = {"top": [],"bottom": [],"coverall": [],"onepiece": [], "accessories": [], "footwear": []}
     cats = ["top","bottom","coverall","onepiece", "accessories", "footwear"]
 
@@ -28,13 +28,7 @@ def search_results(results, name):
     if "seasons" in results:
         for item in results["seasons"]:
             seasons += "+" + item
-
-    for i in queries:
-        for j in queries[i]:
-            j += occasions
     
-    print(queries)
-
     users = pd.read_pickle('users.pkl')
     name = name[1:]
     user = users.loc[users['FirstName'] == name]
@@ -48,10 +42,6 @@ def search_results(results, name):
             gender = "Female"
         elif user.iloc[0]["Gender"] == "M":
             gender = "Male"
-        for i in queries:
-            for j in queries[i]:
-                j += gender
-                
         totalproducts_user = len(user.iloc[0]["ProductsBought"]) + len(user.iloc[0]["ProductsViewedInLast30Days"]) + len(user.iloc[0]["ProductsInWishlist"])
 
         if totalproducts_user > 15  :
@@ -73,6 +63,10 @@ def search_results(results, name):
             products_user["productsWishlistUser"] = user.iloc[0]["ProductsInWishlist"]
 
     pprint(products_user)
+    for i in queries:
+        for j in queries[i]:
+            j += occasions + "+" + gender
+
 
     search_results = {}
     for i in queries:
