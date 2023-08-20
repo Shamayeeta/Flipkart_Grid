@@ -2,7 +2,7 @@
 
 ## Problem Statement: Conversational Fashion Output Generator using GenAI
 
-This repository contains the code for a GenAI-based Fashion Recommender Chatbot, **FashionKart**. 
+This repository contains the code for a GenAI-based Fashion Recommender Chatbot, **FashionKart**. The GitHub link is here - https://github.com/Shamayeeta/Flipkart_Grid
 
 ## Run using Python environment
 1. It is suggested to create a new conda environment with Python 3.11
