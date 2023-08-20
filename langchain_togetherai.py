@@ -7,6 +7,9 @@ from query_results import search_results
 from pprint import pprint
 import requests
 from ExtractImage import Extract_Image
+from PIL import Image
+import requests
+from io import BytesIO
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
 system_prompt = """
@@ -149,16 +152,21 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
 
             print(category, result)
             with st.container():
-                st.markdown(f"**{result['name']}**")
+                # st.markdown(f"**{result['name']}**")
                 col1, col2 = st.columns(2)
                 with col1:
                     image.set_url(top_product[2])
                     img = image.get_image()
+                    image_height = 10
                     if len(img):
-                        st.image(img[0], use_column_width=True)
+                        response = requests.get(img[0])
+                        im = Image.open(BytesIO(response.content))
+                        im.resize((int(im.width * (image_height / im.height)), image_height))
+                        st.image(im, use_column_width=False)
                     else:
                         st.image('imagenotfound.png', use_column_width=True)
                 with col2:
+                    st.markdown(f"**{result['name']}**")
                     st.markdown(f"**Current Price:** {result['current_price']}")
                     st.markdown(f"**Original Price:** {result['original_price']}")
                     st.markdown(f"**Discounted:** {result['discounted']}")
