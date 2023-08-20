@@ -68,6 +68,23 @@ def parse_text(text):
         print(wrapped_text +'\n\n')
         # return assistant_text
 
+def parse_recommendations(result):
+    with st.container():
+        # st.markdown(f"**{result['name']}**")
+        col1, col2 = st.columns(2)
+        with col1:
+            if result["image"]:
+                st.image(result["image"], use_column_width=False)
+            else:
+                st.image('imagenotfound.png', use_column_width=True)
+        with col2:
+            st.markdown(f"**{result['name']}**")
+            st.markdown(f"**Current Price:** {result['current_price']}")
+            st.markdown(f"**Original Price:** {result['original_price']}")
+            st.markdown(f"**Discounted:** {result['discounted']}")
+            st.markdown(f"**Buy Now:** {result['share_url']}")
+
+
 template = get_prompt(instruction, system_prompt)
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_input"], template=template
@@ -98,7 +115,10 @@ if "messages" not in st.session_state.keys():
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.write(message["content"])
+        if "recommendation" in message:
+            parse_recommendations(message["recommendation"])
+        else:
+            st.write(message["content"])
 
 # React to user input
 if prompt := st.chat_input("Type your message here...", key="user_input"):
@@ -108,69 +128,59 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     index = {"top": -1,"bottom": -1,"coverall": -1,"onepiece": -1, "accessories": -1, "footwear": -1}
-    response = llm_chain.predict(user_input=prompt)
-    if response.find('{') == -1:
-        # Display assistant response in chat message container
-        with st.chat_message("assistant"):
-            st.markdown(response)
-        # Add assistant response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
-    else:
-        categories = response[response.find('{'):response.find('}')+1]
-        gender = []
-        name = str(llm_chain.predict(user_input="What is my name? Return only my name in one word and nothing else"))
-        gender.append(str(llm_chain.predict(user_input="What do you think my gender is? The response has to be one word - either 'women' or 'men'")))
-        if (gender[0].find('women')!=-1) or gender[0].find('woman')!= -1 or gender[0].find('female') != -1: 
-            gender[0] = "women"
-        elif(gender[0].find('men')!=-1) or gender[0].find('man') != -1 or gender[0].find('male') != -1:
-            gender[0] = "men" 
-    
-        categories = eval(categories)
-        search_results = search_results(categories, name[1:], gender)
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            response = llm_chain.predict(user_input=prompt)
+            if response.find('{') == -1:
+                # Display assistant response in chat message container
+                
+                st.markdown(response)
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            else:
+                categories = response[response.find('{'):response.find('}')+1]
+                gender = []
+                name = str(llm_chain.predict(user_input="What is my name? Return only my name in one word and nothing else"))
+                gender.append(str(llm_chain.predict(user_input="What do you think my gender is? The response has to be one word - either 'women' or 'men'")))
+                if (gender[0].find('women')!=-1) or gender[0].find('woman')!= -1 or gender[0].find('female') != -1: 
+                    gender[0] = "women"
+                elif(gender[0].find('men')!=-1) or gender[0].find('man') != -1 or gender[0].find('male') != -1:
+                    gender[0] = "men" 
+            
+                categories = eval(categories)
+                search_results = search_results(categories, name[1:], gender)
 
-        for category in search_results:
-            flag = 0
-            if len(search_results[category]) == 0:
-                continue
-            while flag == 0 and index[category] + 1 < len(search_results[category]):
-                index[category] += 1
-                top_product = search_results[category][index[category]]
-                # print(top_product)
-                string = '/'.join(top_product[2].split('/')[3:])
-                query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
-                # print(query_url)
-                result = requests.get(query_url).json()
-                if 'name' in result:
-                    print(gender, result['name'])
-                    if gender[0] == "women" and result['name'].find("Women") != -1:
-                            flag = 1
-                    elif gender[0] == "men" and result['name'].find("Women") == -1:
-                            print("take", result['name'], result['name'].find("Women"))
-                            flag = 1
-                else:
-                    continue
+                for category in search_results:
+                    flag = 0
+                    if len(search_results[category]) == 0:
+                        continue
+                    while flag == 0 and index[category] + 1 < len(search_results[category]):
+                        index[category] += 1
+                        top_product = search_results[category][index[category]]
+                        # print(top_product)
+                        string = '/'.join(top_product[2].split('/')[3:])
+                        query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
+                        # print(query_url)
+                        result = requests.get(query_url).json()
+                        if 'name' in result:
+                            print(gender, result['name'])
+                            if gender[0] == "women" and result['name'].find("Women") != -1:
+                                    flag = 1
+                            elif gender[0] == "men" and result['name'].find("Women") == -1:
+                                    print("take", result['name'], result['name'].find("Women"))
+                                    flag = 1
+                        else:
+                            continue
 
-            print(category, result)
-            with st.container():
-                # st.markdown(f"**{result['name']}**")
-                col1, col2 = st.columns(2)
-                with col1:
+                    print(category, result)
                     image.set_url(top_product[2])
                     img = image.get_image()
                     image_height = 10
-                    if len(img):
-                        response = requests.get(img[0])
-                        im = Image.open(BytesIO(response.content))
-                        im.resize((int(im.width * (image_height / im.height)), image_height))
-                        st.image(im, use_column_width=False)
-                    else:
-                        st.image('imagenotfound.png', use_column_width=True)
-                with col2:
-                    st.markdown(f"**{result['name']}**")
-                    st.markdown(f"**Current Price:** {result['current_price']}")
-                    st.markdown(f"**Original Price:** {result['original_price']}")
-                    st.markdown(f"**Discounted:** {result['discounted']}")
-                    st.markdown(f"**Buy Now:** {result['share_url']}")
+                    result["image"] = img
+                    parse_recommendations(result)
+                    
+                    st.session_state.messages.append({"role": "assistant", "content": response, "recommendation": result})
+                
 
 with st.sidebar:
     st.subheader("About")

@@ -1,5 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
+from PIL import Image
+import urllib.request
+from io import BytesIO
 
 class Extract_Image():
 
@@ -14,7 +17,6 @@ class Extract_Image():
         soup = BeautifulSoup(page.content, 'html.parser')
         image_tags = soup.find_all('img')
         image_tags = [img.get('src') for img in image_tags]
-        final_image_urls = []
         for img_url in image_tags:
             try:
                 if img_url.find('rukminim2.flixcart.com') == -1:
@@ -24,11 +26,15 @@ class Extract_Image():
                     mid_index = img_url.find("/", start_index)
                     end_index = img_url.find("/", mid_index+1)
 
-                    img_url = img_url[:start_index] + "2000/2000" + img_url[end_index:]
-                    final_image_urls.append(img_url)
+                    img_url = img_url[:start_index] + "500/500" + img_url[end_index:]
+                    response = requests.get(img_url)
+                    im = Image.open(BytesIO(response.content))
+                    image_height = 200
+                    im.resize((int(im.width * (image_height / im.height)), image_height))
+                    return im
             except:
                 pass
-        return final_image_urls
+        return None
 
 if __name__ == '__main__':
     obj = Extract_Image('https://www.flipkart.com/scube-designs-u-neck-women-blouse/p/itm281eaa5a73c28')
