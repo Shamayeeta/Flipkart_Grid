@@ -160,8 +160,9 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
             
                 categories = eval(categories)
                 search_results = search_results(categories, st.session_state.name[1:], st.session_state.gender)
-                
                 for category in search_results:
+                    if search_results[category] is None:
+                        continue
                     flag = 0
                     # if len(search_results[category]) == 0:
                     #     continue
