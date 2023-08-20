@@ -69,7 +69,7 @@ def search_results(results, name, gender):
             products_user["productsBoughtUser"] = user.iloc[0]["ProductsBought"]
             products_user["productsWishlistUser"] = user.iloc[0]["ProductsInWishlist"]
 
-    pprint(products_user)
+    # pprint(products_user)
 
     for i in queries:
         for j in range(len(queries[i])):
