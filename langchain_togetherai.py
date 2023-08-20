@@ -97,7 +97,7 @@ if "memory" not in st.session_state.keys():
 if "llm" not in st.session_state.keys():
     st.session_state.llm = TogetherLLM(
         model= "togethercomputer/llama-2-70b-chat",
-        temperature=0.9,
+        temperature=0.1,
         max_tokens=512
     )
 
