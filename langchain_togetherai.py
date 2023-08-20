@@ -163,8 +163,8 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 
                 for category in search_results:
                     flag = 0
-                    if len(search_results[category]) == 0:
-                        continue
+                    # if len(search_results[category]) == 0:
+                    #     continue
                     while index[category] + 1 < len(search_results[category]):
                         index[category] += 1
                         top_product = search_results[category][index[category]]
