@@ -200,8 +200,18 @@ with st.sidebar:
     st.subheader("About")
     st.markdown(
         """
-        This app is a demo for the FashionKart Outfit Generator ChatBot.
-        The chatbot is powered by the LLaMA2-70B language model.
+        Welcome to FashionKart, your go-to AI Outfit Generator ChatBot!\
+        The chatbot is powered by the LLaMA2-70B language model.\
+        FashionKart gives personalised product recommendations based on the user's preferences and prompts.\
+
+        The app is built as a part of the SDE track of Flipkart Grid 5.0\
+        
+        The team responsible for the app comprises of:
+        - Shamayeeta
+        - Ananya
+        - Aadarsh
+        Final year students at IIT Kanpur
+
 
         """
     )
