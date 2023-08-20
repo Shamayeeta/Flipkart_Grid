@@ -151,10 +151,9 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 search_results = search_results(categories, name[1:], gender)
 
                 for category in search_results:
-                    flag = 0
                     if len(search_results[category]) == 0:
                         continue
-                    while flag == 0 and index[category] + 1 < len(search_results[category]):
+                    while index[category] + 1 < len(search_results[category]):
                         index[category] += 1
                         top_product = search_results[category][index[category]]
                         # print(top_product)
@@ -166,11 +165,11 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                             print(gender, result['name'])
                             if gender[0] == "women" and result['name'].find("Women") != -1:
                                     flag = 1
+                                    break
                             elif gender[0] == "men" and result['name'].find("Women") == -1:
                                     print("take", result['name'], result['name'].find("Women"))
                                     flag = 1
-                        else:
-                            continue
+                                    break
 
                     print(category, result)
                     image.set_url(top_product[2])
