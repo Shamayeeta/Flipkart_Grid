@@ -74,7 +74,7 @@ def parse_recommendations(result):
         col1, col2 = st.columns(2)
         with col1:
             if result["image"]:
-                st.image(result["image"], use_column_width=False)
+                st.image(result["image"], use_column_width=True)
             else:
                 st.image('imagenotfound.png', use_column_width=True)
         with col2:
