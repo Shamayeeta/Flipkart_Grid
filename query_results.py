@@ -16,18 +16,26 @@ def search_results(results, name, gender):
 
     for cat in cats:
         if cat in results:
-            for item in results[cat]:
-                queries[cat].append(item)
+            if type(results[cat]) == str:
+                if len(results[cat]) and results[cat].isspace() is False:
+                    queries[cat].append(results[cat])
+            elif type(results[cat]) == list:
+                for item in results[cat]:
+                    queries[cat].append(item)
 
     occasions = ""
     if "occasion" in results:
-        for item in results["occasion"]:
-            occasions += " " + item
+        if type(results["occasion"]) == str:
+            occasions = results["occasion"]
+        elif type(results["occasion"]) == list:
+            for item in results["occasion"]:
+                occasions += " " + item
+    
 
-    seasons = ""
-    if "seasons" in results:
-        for item in results["seasons"]:
-            seasons += " " + item
+    # seasons = ""
+    # if "seasons" in results:
+    #     for item in results["seasons"]:
+    #         seasons += " " + item
     
     users = pd.read_pickle('users.pkl')
     user = users.loc[users['FirstName'] == name]

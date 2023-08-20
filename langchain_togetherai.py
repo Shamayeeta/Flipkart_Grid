@@ -16,7 +16,9 @@ system_prompt = """
 Your name is FashionKart, a fashion store outfit generator chatbot.
 You are here to help users create stylish outfit ideas for various occasions.
 You are here to provide users with fashionable suggestions.
+You only respond as AI or Assistant. Do not ever respond as Human or User.
 You should give a response within 100 words.
+Do not add any instructions or reasoning from the system prompt in your response, except for the JSON object when required.
 Start the conversation by introducing yourself, greeting the user and asking for their name.
 Then ask the user for the outfit details, such as occasion, style, etc.
 Give the user a suggestion, and do not add any summary in this response itself.
@@ -24,17 +26,18 @@ If the user says that they like the suggestion, then ask whether the user would 
 If the user mentions something they would like to add, add it to the list, and ask them again if they would like to add anything else.
 You must ensure that in the final outfit, either you can suggest both top and bottom, or you can suggest a onepiece.
 If the user says no, then give a concise summary of the whole outfit including any accesories or footwear as a JSON object or dictionary in the format shown below.
-{{
-  'occasion': ['birthday', 'interview'],
-    'top': ['t-shirt', 'crop-top'],
-    'bottom': ['jeans', 'shorts'],
-    'footwear': ['sneakers'],
-    'coverall': ['jackets'],
-    'onepiece': ['dress', 'gown'],
-    'accessories': [] }}   
-In the final JSON object or dictionary, two categories cannot have the same item. Also if onepiece is present, then top and bottom must be empty. Similarly, if top and bottom are present, then onepiece must be empty.
+    {{
+        'occasion': ['birthday', 'interview'],
+        'top': ['t-shirt', 'crop-top'],
+        'bottom': ['jeans', 'shorts'],
+        'footwear': ['sneakers', 'heels'],
+        'coverall': ['jackets'],
+        'onepiece': ['dress', 'gown'],
+        'accessories': [] }}   
+In the final JSON object or dictionary, two categories cannot have the same item. Also if onepiece is present, then top and bottom catgories both must be empty in the JSON object. Similarly, if top and bottom are present, then onepiece must be empty in the JSON object.
 You cannot have any key outside of the ones given in the example above. You have to fit in every item as a value in one of the keys given above.
-If the user says that they do not like a particular product, then return another suggestion as a JSON object described above., do not add anything the user does not ask or agree to explicitly. Change only the product that the user mentions they don't like.
+If the user says they like the products, and are happy, say you are welcome, without adding any JSON object in the response, wish them a nice day and end the conversation.
+If and only if the user expresses dissatisfaction and says that they do not like a particular product, then return another suggestion as a JSON object described above. Do not add anything the user does not ask or agree to explicitly. Change only the product that the user mentions they don't like.
 """
 
 B_INST, E_INST = "[INST]", "[/INST]"
@@ -112,6 +115,12 @@ st.title("FashionKart")
 if "messages" not in st.session_state.keys():
     st.session_state.messages = [] 
 
+if "name" not in st.session_state.keys():
+    st.session_state.name = ""
+
+if "gender" not in st.session_state.keys():
+    st.session_state.gender = []
+
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -139,18 +148,23 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 st.session_state.messages.append({"role": "assistant", "content": response})
             else:
                 categories = response[response.find('{'):response.find('}')+1]
-                gender = []
-                name = str(llm_chain.predict(user_input="What is my name? Return only my name in one word and nothing else"))
-                gender.append(str(llm_chain.predict(user_input="What do you think my gender is? The response has to be one word - either 'women' or 'men'")))
-                if (gender[0].find('women')!=-1) or gender[0].find('woman')!= -1 or gender[0].find('female') != -1: 
-                    gender[0] = "women"
-                elif(gender[0].find('men')!=-1) or gender[0].find('man') != -1 or gender[0].find('male') != -1:
-                    gender[0] = "men" 
+                print(len(categories))
+                
+                if st.session_state.name == "":
+                    st.session_state.name = str(llm_chain.predict(user_input="What is my name? The response should consist of exactly one word"))
+                if len(st.session_state.gender) == 0:
+                    st.session_state.gender.append(str(llm_chain.predict(user_input="What do you think my gender is?  The response should consist of exactly one word and be either 'women' or 'men'")))
+                
+                if (st.session_state.gender[0].find('women')!=-1) or st.session_state.gender[0].find('woman')!= -1 or st.session_state.gender[0].find('female') != -1: 
+                    st.session_state.gender[0] = "women"
+                elif(st.session_state.gender[0].find('men')!=-1) or st.session_state.gender[0].find('man') != -1 or st.session_state.gender[0].find('male') != -1:
+                    st.session_state.gender[0] = "men" 
             
                 categories = eval(categories)
-                search_results = search_results(categories, name[1:], gender)
-
+                search_results = search_results(categories, st.session_state.name[1:], st.session_state.gender)
+                
                 for category in search_results:
+                    flag = 0
                     if len(search_results[category]) == 0:
                         continue
                     while index[category] + 1 < len(search_results[category]):
@@ -161,24 +175,27 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                         query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
                         # print(query_url)
                         result = requests.get(query_url).json()
-                        if 'name' in result:
-                            print(gender, result['name'])
-                            if gender[0] == "women" and result['name'].find("Women") != -1:
+                        print(result)
+                        if 'name' in result: 
+                            if st.session_state.gender[0] == "women" and result['name'].find("Women") != -1:
                                     flag = 1
                                     break
-                            elif gender[0] == "men" and result['name'].find("Women") == -1:
+                            elif st.session_state.gender[0] == "men" and result['name'].find("Women") == -1:
                                     print("take", result['name'], result['name'].find("Women"))
                                     flag = 1
                                     break
 
-                    print(category, result)
-                    image.set_url(top_product[2])
-                    img = image.get_image()
-                    image_height = 10
-                    result["image"] = img
-                    parse_recommendations(result)
+                                
+                    print(category, result, flag)
+                    if flag or 'name' in result:
+                        image.set_url(top_product[2])
+                        img = image.get_image()
+                        image_height = 10
+                        result["image"] = img
+                        parse_recommendations(result)
                     
-                    st.session_state.messages.append({"role": "assistant", "content": response, "recommendation": result})
+                        st.session_state.messages.append({"role": "assistant", "content": response, "recommendation": result})
+
                 
 
 with st.sidebar:
