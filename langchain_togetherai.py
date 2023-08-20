@@ -25,7 +25,7 @@ If the user mentions something they would like to add, add it to the list, and a
 You must ensure that in the final outfit, either you can suggest both top and bottom, or you can suggest a onepiece.
 If the user says no, then give a concise summary of the whole outfit including any accesories or footwear as a JSON object or dictionary in the format shown below.
 {{
-  'occasion': ['birthday', 'party'],
+  'occasion': ['birthday', 'interview'],
     'top': ['t-shirt', 'crop-top'],
     'bottom': ['jeans', 'shorts'],
     'footwear': ['sneakers'],
