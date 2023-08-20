@@ -197,24 +197,19 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 
 
 with st.sidebar:
-    st.subheader("About")
+    st.sidebar.info("# About")
     st.markdown(
-        """
-        Welcome to FashionKart, your go-to AI Outfit Generator ChatBot!\
-        The chatbot is powered by the LLaMA2-70B language model.\
-        FashionKart gives personalised product recommendations based on the user's preferences and prompts.\
-
-        The app is built as a part of the SDE track of Flipkart Grid 5.0\
-        
-        The team responsible for the app comprises of:
-        - Shamayeeta
-        - Ananya
-        - Aadarsh
-        Final year students at IIT Kanpur
-
-
-        """
-    )
+""" Welcome to FashionKart, your go-to AI Outfit Generator ChatBot!
+- The chatbot is powered by the LLaMA2-70B language model. 
+- FashionKart gives personalised product recommendations based on the user's preferences and prompts.
+- The app is built as a part of the SDE track of Flipkart Grid 5.0 
+- The team responsible for the app comprises of 3 Final-year B.Tech students from IIT Kanpur:
+    - Aadarsh Shaw
+    - Ananya Mehrotra
+    - Shamayeeta Dass
+"""
+)
+    
     st.button("Clear Chat History", on_click=lambda: st.session_state.clear())
 
 
