@@ -159,16 +159,16 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                     st.session_state.gender[0] = "men" 
             
                 categories = eval(categories)
-                search_results = search_results(categories, st.session_state.name[1:], st.session_state.gender)
-                for category in search_results:
-                    if search_results[category] is None:
+                search_result = search_results(categories, st.session_state.name[1:], st.session_state.gender)
+                for category in search_result:
+                    if search_result[category] is None:
                         continue
                     flag = 0
-                    if len(search_results[category]) == 0:
+                    if len(search_result[category]) == 0:
                         continue
-                    while index[category] + 1 < len(search_results[category]):
+                    while index[category] + 1 < len(search_result[category]):
                         index[category] += 1
-                        top_product = search_results[category][index[category]]
+                        top_product = search_result[category][index[category]]
                         # print(top_product)
                         string = '/'.join(top_product[2].split('/')[3:])
                         query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
@@ -191,8 +191,7 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                         img = image.get_image()
                         image_height = 10
                         result["image"] = img
-                        parse_recommendations(result)
-                    
+                        parse_recommendations(result)                    
                         st.session_state.messages.append({"role": "assistant", "content": response, "recommendation": result})
 
                 
