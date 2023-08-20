@@ -10,10 +10,12 @@ from SimilarityFinder import SimilarityFinder
 from heapq import heappop, heappush, heapify
 import random
 
+# returns the list of ranked products segregated by catogories
 def search_results(results, name, gender):
-    queries = {"top": [],"bottom": [],"coverall": [],"onepiece": [], "accessories": [], "footwear": []}
-    cats = ["top","bottom","coverall","onepiece", "accessories", "footwear"]
+    queries = {"top": [],"bottom": [],"coverall": [],"onepiece": [], "accessories": [], "footwear": []} # queries to search for
+    cats = ["top","bottom","coverall","onepiece", "accessories", "footwear"] # categories to search for
 
+    # add the suggested products to the corresponding category in queries
     for cat in cats:
         if cat in results:
             if type(results[cat]) == str:
@@ -23,6 +25,7 @@ def search_results(results, name, gender):
                 for item in results[cat]:
                     queries[cat].append(item)
 
+    # combine all the occasion-related keywords into a single string
     occasions = ""
     if "occasion" in results:
         if type(results["occasion"]) == str:
@@ -31,15 +34,9 @@ def search_results(results, name, gender):
             for item in results["occasion"]:
                 occasions += " " + item
     
-
-    # seasons = ""
-    # if "seasons" in results:
-    #     for item in results["seasons"]:
-    #         seasons += " " + item
-    
+    # If user exists in database, get the products bought, viewed and in wishlist
     users = pd.read_pickle('users.pkl')
     user = users.loc[users['FirstName'] == name]
-    # gender = ""
     products_user = { "productsBoughtUser" : [] 
                     , "productsViewedUser" : []
                     , "productsWishlistUser" : []}
@@ -69,37 +66,40 @@ def search_results(results, name, gender):
             products_user["productsBoughtUser"] = user.iloc[0]["ProductsBought"]
             products_user["productsWishlistUser"] = user.iloc[0]["ProductsInWishlist"]
 
-    # pprint(products_user)
-
+    # add the occasion-related keywords and gender to the queries
     for i in queries:
         for j in range(len(queries[i])):
             queries[i][j] = queries[i][j] + " " + occasions + " " + gender[0]
 
     pprint(queries)
 
+    # search for the queries and append the ranked results to the category in the search_results dictionary
     search_results = {}
     for i in queries:
         ranked_products = []
         heapify(ranked_products)
         for j in queries[i]:
             response = requests.get(f"https://flipkart-scraper-api.dvishal485.workers.dev/search/{j}").json()
-            total_search_results = response["total_result"]
             search_products = response["result"]
-            ranked_products = similarity_ranker(search_products, products_user, totalproducts_user, ranked_products)
+            ranked_products = similarity_ranker(search_products, products_user, totalproducts_user, ranked_products) # rank the products based on similarity
         search_results[i] = ranked_products
     
     return search_results
 
-
+# ranks the products based on similarity
 def similarity_ranker(search_products, products_user, totalproducts_user, ranked_products):
+    
+    # if user does not exist in database, return the products as it is
     if len(products_user["productsViewedUser"]) + len(products_user["productsBoughtUser"]) + len(products_user["productsWishlistUser"]) == 0:
         ans = []
         for i in search_products:
             ans.append((0,i["name"], i["link"]))
         return ans
+    
+    # else, rank the products based on similarity, using max-heap
     check = SimilarityFinder('sentence-transformers/all-mpnet-base-v2')
     weights = { "productsViewedUser" : 0.5, "productsBoughtUser" : 0.3, "productsWishlistUser": 0.2}
-    if len(search_products) > 10:
+    if len(search_products) > 12:
         search_products = search_products[2:12]
     for i in search_products:
         val = 0
@@ -109,7 +109,7 @@ def similarity_ranker(search_products, products_user, totalproducts_user, ranked
                 check.calculate_embeddings(str(j[1])),
                 check.calculate_embeddings(i["name"])).item()
         sim = val/min(20, totalproducts_user)
-        heappush(ranked_products, (-sim , i["name"], i["link"]))
+        heappush(ranked_products, (-sim , i["name"], i["link"])) # heappush is used to push the tuple into the max-heap
 
         sorted_tuples = []
         max_heap = ranked_products

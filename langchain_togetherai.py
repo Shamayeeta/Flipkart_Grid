@@ -7,11 +7,11 @@ from query_results import search_results
 from pprint import pprint
 import requests
 from ExtractImage import Extract_Image
-from PIL import Image
 import requests
-from io import BytesIO
 
 instruction = "Chat History:\n\n{chat_history} \n\nHuman: {user_input}\n\n Assistant:"
+
+# Default System Prompt sent to the LLM
 system_prompt = """
 Your name is FashionKart, a fashion store outfit generator chatbot.
 You are here to help users create stylish outfit ideas for various occasions.
@@ -40,10 +40,6 @@ If and only if the user expresses dissatisfaction and says that they do not like
 
 B_INST, E_INST = "[INST]", "[/INST]"
 B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
-# DEFAULT_SYSTEM_PROMPT = """\
-# You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-
-# If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
 
 image = Extract_Image()
 
@@ -52,26 +48,9 @@ def get_prompt(instruction, new_system_prompt = system_prompt ):
     prompt_template =  B_INST + SYSTEM_PROMPT + instruction + E_INST
     return prompt_template
 
-def cut_off_text(text, prompt):
-    cutoff_phrase = prompt
-    index = text.find(cutoff_phrase)
-    if index != -1:
-        return text[:index]
-    else:
-        return text
-
-def remove_substring(string, substring):
-    return string.replace(substring, "")
-
-
-def parse_text(text):
-        wrapped_text = textwrap.fill(text, width=100)
-        print(wrapped_text +'\n\n')
-        # return assistant_text
 
 def parse_recommendations(result):
     with st.container():
-        # st.markdown(f"**{result['name']}**")
         col1, col2 = st.columns(2)
         with col1:
             if result["image"]:
@@ -87,13 +66,17 @@ def parse_recommendations(result):
 
 
 template = get_prompt(instruction, system_prompt)
+
+# Create a PromptTemplate object
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_input"], template=template
 )
 
+# Add a ConversationBufferMemory object to the session state
 if "memory" not in st.session_state.keys():
     st.session_state.memory = ConversationBufferMemory(memory_key="chat_history")
 
+# Add a TogetherLLM object to the session state
 if "llm" not in st.session_state.keys():
     st.session_state.llm = TogetherLLM(
         model= "togethercomputer/llama-2-70b-chat",
@@ -101,6 +84,7 @@ if "llm" not in st.session_state.keys():
         max_tokens=512
     )
 
+# Create an LLMChain object with the PromptTemplate and ConversationBufferMemory objects
 llm_chain = LLMChain(
     llm=st.session_state.llm,
     prompt=prompt,
@@ -110,6 +94,7 @@ llm_chain = LLMChain(
 
 st.title("FashionKart")
 
+# Initialize chat history if not already initialized
 if "messages" not in st.session_state.keys():
     st.session_state.messages = [] 
 
@@ -145,9 +130,11 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 # Add assistant response to chat history
                 st.session_state.messages.append({"role": "assistant", "content": response})
             else:
+
+                # Extract the catgories JSON object from the response
                 categories = response[response.find('{'):response.find('}')+1]
-                print(len(categories))
-                
+
+                # If name and gender not set, extract it from the LLM
                 if st.session_state.name == "":
                     st.session_state.name = str(llm_chain.predict(user_input="What is my name? The response should consist of exactly one word"))
                 if len(st.session_state.gender) == 0:
@@ -158,8 +145,13 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                 elif(st.session_state.gender[0].find('men')!=-1) or st.session_state.gender[0].find('man') != -1 or st.session_state.gender[0].find('male') != -1:
                     st.session_state.gender[0] = "men" 
             
+                # Extract JSON object from the string in response
                 categories = eval(categories)
+
+                # Search for the products according to received queries, and rank them acc to user preferences (if applicable)
                 search_result = search_results(categories, st.session_state.name[1:], st.session_state.gender)
+
+                # For every category, display top ranked product as recommended choice
                 for category in search_result:
                     if search_result[category] is None:
                         continue
@@ -169,12 +161,10 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                     while index[category] + 1 < len(search_result[category]):
                         index[category] += 1
                         top_product = search_result[category][index[category]]
-                        # print(top_product)
                         string = '/'.join(top_product[2].split('/')[3:])
+                        # API call to get product details
                         query_url = "https://flipkart-scraper-api.dvishal485.workers.dev/product/" + string
-                        # print(query_url)
                         result = requests.get(query_url).json()
-                        print(result)
                         if 'name' in result: 
                             if st.session_state.gender[0] == "women" and result['name'].find("Women") != -1:
                                     flag = 1
@@ -184,18 +174,16 @@ if prompt := st.chat_input("Type your message here...", key="user_input"):
                                     flag = 1
                                     break
 
-                                
-                    print(category, result, flag)
+                    # If product found, display it in chatbox as Assistant's response
                     if flag or 'name' in result:
                         image.set_url(top_product[2])
                         img = image.get_image()
                         image_height = 10
                         result["image"] = img
                         parse_recommendations(result)                    
-                        st.session_state.messages.append({"role": "assistant", "content": response, "recommendation": result})
+                        st.session_state.messages.append({"role": "assistant", "content": response, "recommendation": result})  
 
-                
-
+# Display About section in sidebar
 with st.sidebar:
     st.sidebar.info("# About")
     st.markdown(
@@ -209,7 +197,7 @@ with st.sidebar:
     - Shamayeeta Dass
 """
 )
-    
+    # Allows user to clear chat history 
     st.button("Clear Chat History", on_click=lambda: st.session_state.clear())
 
 
