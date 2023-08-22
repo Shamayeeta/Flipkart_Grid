@@ -4,6 +4,7 @@
 
 This repository contains the code for a GenAI-based Fashion Recommender Chatbot, **FashionKart**. The GitHub link is here - https://github.com/Shamayeeta/Flipkart_Grid. 
 
+
 The application is live at - https://fashionkart.streamlit.app
 ## Run using Python environment
 1. It is suggested to create a new conda environment with Python 3.11
